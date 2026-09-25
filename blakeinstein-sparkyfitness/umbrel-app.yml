@@ -1,5 +1,5 @@
 manifestVersion: 1
-id: sparky-sparkyfitness
+id: blakeinstein-sparkyfitness
 category: files
 name: SparkyFitness
 version: "v1.7.2"
@@ -52,4 +52,4 @@ defaultUsername: ""
 defaultPassword: ""
 
 submitter: Rishikesh Anand
-submission: https://github.com/Blakeinstein/sparkyfitness-umbrel-app-store
+submission: https://github.com/Blakeinstein/umbrel-app-store
