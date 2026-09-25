@@ -51,8 +51,13 @@ services:
       SPARKY_FITNESS_APP_DB_PASSWORD: ${APP_SPARKYFITNESS_APP_DB_PASSWORD}
 
       # --- Secrets ---
-      SPARKY_FITNESS_API_ENCRYPTION_KEY: ${APP_SPARKYFITNESS_API_ENCRYPTION_KEY}
-      BETTER_AUTH_SECRET: ${APP_SPARKYFITNESS_BETTER_AUTH_SECRET}
+      # Read from files rather than passed directly, so an instance being
+      # migrated can carry over the originals: hooks/pre-start writes the
+      # device-seed-derived value only when the file is absent. secretLoader
+      # ignores a _FILE variable when the plain variable is already set, so
+      # these two must not also be set here.
+      SPARKY_FITNESS_API_ENCRYPTION_KEY_FILE: /run/secrets/api_encryption_key
+      BETTER_AUTH_SECRET_FILE: /run/secrets/better_auth_secret
 
       # --- Origins and proxying ---
       # Primary browser origin, used for CORS and Better Auth trusted origins.
@@ -74,6 +79,7 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data/uploads:/app/SparkyFitnessServer/uploads
       - ${APP_DATA_DIR}/data/backup:/app/SparkyFitnessServer/backup
+      - ${APP_DATA_DIR}/data/secrets:/run/secrets:ro
     healthcheck:
       # Startup runs migrations before the server listens, so allow for a slow
       # first boot on a Raspberry Pi before counting failures.

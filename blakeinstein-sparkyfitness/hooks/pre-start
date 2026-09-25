@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Seed the two secrets that must outlive a migration.
+#
+# SPARKY_FITNESS_API_ENCRYPTION_KEY decrypts provider credentials stored in the
+# database and BETTER_AUTH_SECRET encrypts stored 2FA secrets, so on a fresh
+# install they can be anything stable, but when importing a backup from another
+# instance they must match that instance or the restored rows cannot be read.
+#
+# Writing them to files instead of passing them as environment variables is what
+# makes that possible: a file placed here by hand is left alone, while a fresh
+# install gets the value Umbrel derives from the device seed. Either way the
+# value is stable across restarts and updates.
+set -euo pipefail
+
+APP_DIR="${APP_DATA_DIR:-$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")}"
+SECRETS_DIR="${APP_DIR}/data/secrets"
+
+mkdir -p "${SECRETS_DIR}"
+
+seed_secret() {
+  local file="${SECRETS_DIR}/$1"
+  local value="${2:-}"
+
+  # Never overwrite. A non-empty file is either a previous install's derived
+  # value or a secret carried over from another instance.
+  if [ -s "${file}" ]; then
+    return 0
+  fi
+  if [ -z "${value}" ]; then
+    echo "pre-start: no value available to seed ${file}" >&2
+    return 0
+  fi
+  printf '%s' "${value}" > "${file}"
+  chmod 600 "${file}"
+  echo "pre-start: seeded ${file}"
+}
+
+seed_secret api_encryption_key "${APP_SPARKYFITNESS_API_ENCRYPTION_KEY:-}"
+seed_secret better_auth_secret "${APP_SPARKYFITNESS_BETTER_AUTH_SECRET:-}"
