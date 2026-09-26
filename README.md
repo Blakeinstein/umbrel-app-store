@@ -60,25 +60,40 @@ forgiving — a mismatched key raises an error rather than returning empty — s
 restore the data with the wrong keys and every stored integration credential
 breaks and anyone with 2FA is locked out.
 
-Place the old values **before the first start** and they are used as-is;
-`hooks/pre-start` only generates a value when the file does not already exist.
+Install the app **first**, then place the secrets and restart.
+`~/umbrel/app-data/<app-id>/` is created by the install, so files written there
+beforehand can be replaced by the installer. `hooks/pre-start` never overwrites
+a file that already exists, so a file written after the install is kept on every
+later start.
 
-1. On the old instance, read the two values out of its `.env`.
-2. On the Umbrel, before installing, create the files:
+1. Install the app from this store and let it finish starting.
+2. Read the two values out of the old instance's `.env`.
+3. Stop the app, write the files, start it again:
    ```sh
    ssh umbrel@umbrel.local
-   APP=~/umbrel/app-data/blakeinstein-sparkyfitness/data/secrets
-   mkdir -p "$APP"
-   printf '%s' 'OLD_SPARKY_FITNESS_API_ENCRYPTION_KEY' > "$APP/api_encryption_key"
-   printf '%s' 'OLD_BETTER_AUTH_SECRET'                > "$APP/better_auth_secret"
-   chmod 600 "$APP"/*
+   APP=blakeinstein-sparkyfitness
+   D=~/umbrel/app-data/$APP/data/secrets
+
+   umbreld client apps.stop.mutate --appId $APP
+   sudo mkdir -p "$D"
+   printf '%s' 'OLD_SPARKY_FITNESS_API_ENCRYPTION_KEY' | sudo tee "$D/api_encryption_key" >/dev/null
+   printf '%s' 'OLD_BETTER_AUTH_SECRET'                | sudo tee "$D/better_auth_secret" >/dev/null
+   sudo chmod 600 "$D"/*
+   umbreld client apps.start.mutate --appId $APP
    ```
-   If the app is already installed, stop it first, write the files, then start it.
-3. Install the app and sign in.
-4. On the old instance, take a backup from **Settings → Admin → Backup**, then
-   upload that `sparkyfitness_full_backup_*.tar.gz` under the same screen on the
-   new one. Restore **wipes the current database** and replaces it with the
-   archive's, and restores uploads too, so do it before entering real data.
+4. Confirm the server read them from the files rather than generating its own:
+   ```sh
+   umbreld client apps.logs.query --appId $APP | grep -i secret
+   # [Secrets] Loaded secret for SPARKY_FITNESS_API_ENCRYPTION_KEY from file ...
+   # [Secrets] Successfully loaded 2 secrets from files.
+   ```
+   `No secrets loaded from files` means the installed `docker-compose.yml` is an
+   older copy without the `_FILE` variables. Remove and re-add this store in
+   umbrelOS so it re-pulls, then reinstall.
+5. On the old instance take a backup from **Settings → Admin → Backup**, then
+   upload that `sparkyfitness_full_backup_*.tar.gz` under the same screen here.
+   Restore **wipes the current database** and replaces it with the archive's,
+   and restores uploads too, so do it before entering real data.
 
 The database password does not need migrating — restore replays into the new
 instance's own database using its own credentials.
