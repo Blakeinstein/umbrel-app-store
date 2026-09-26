@@ -66,7 +66,16 @@ beforehand can be replaced by the installer. `hooks/pre-start` never overwrites
 a file that already exists, so a file written after the install is kept on every
 later start.
 
-1. Install the app from this store and let it finish starting.
+umbrelOS copies `docker-compose.yml` into app data only on install and update,
+and it only offers an update when `version` in the manifest changes. Restarting
+does not pull a new compose file. An install already on `v1.7.2` must be
+updated to `v1.7.2-1` before the secret files can be read. Do not uninstall to
+get the new compose — uninstall deletes the app's data.
+
+1. If the app is already installed, remove and re-add this community store so
+   umbrelOS re-pulls it (that does not uninstall the app), then update
+   SparkyFitness to `v1.7.2-1` from the app page. Otherwise install it and let
+   it finish starting.
 2. Read the two values out of the old instance's `.env`.
 3. Stop the app, write the files, start it again:
    ```sh
@@ -87,9 +96,9 @@ later start.
    # [Secrets] Loaded secret for SPARKY_FITNESS_API_ENCRYPTION_KEY from file ...
    # [Secrets] Successfully loaded 2 secrets from files.
    ```
-   `No secrets loaded from files` means the installed `docker-compose.yml` is an
-   older copy without the `_FILE` variables. Remove and re-add this store in
-   umbrelOS so it re-pulls, then reinstall.
+   `No secrets loaded from files` means this start is still on the old compose,
+   which passes derived secrets as environment variables and never opens the
+   files. Update to `v1.7.2-1` and start again. Do not uninstall.
 5. On the old instance take a backup from **Settings → Admin → Backup**, then
    upload that `sparkyfitness_full_backup_*.tar.gz` under the same screen here.
    Restore **wipes the current database** and replaces it with the archive's,

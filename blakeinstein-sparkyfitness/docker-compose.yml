@@ -56,8 +56,10 @@ services:
       # device-seed-derived value only when the file is absent. secretLoader
       # ignores a _FILE variable when the plain variable is already set, so
       # these two must not also be set here.
-      SPARKY_FITNESS_API_ENCRYPTION_KEY_FILE: /run/secrets/api_encryption_key
-      BETTER_AUTH_SECRET_FILE: /run/secrets/better_auth_secret
+      # /secrets, not /run/secrets. Docker's own secrets mount can hide a bind
+      # at /run/secrets, and secretLoader then reports that nothing was loaded.
+      SPARKY_FITNESS_API_ENCRYPTION_KEY_FILE: /secrets/api_encryption_key
+      BETTER_AUTH_SECRET_FILE: /secrets/better_auth_secret
 
       # --- Origins and proxying ---
       # Primary browser origin, used for CORS and Better Auth trusted origins.
@@ -79,7 +81,7 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data/uploads:/app/SparkyFitnessServer/uploads
       - ${APP_DATA_DIR}/data/backup:/app/SparkyFitnessServer/backup
-      - ${APP_DATA_DIR}/data/secrets:/run/secrets:ro
+      - ${APP_DATA_DIR}/data/secrets:/secrets:ro
     healthcheck:
       # Startup runs migrations before the server listens, so allow for a slow
       # first boot on a Raspberry Pi before counting failures.
